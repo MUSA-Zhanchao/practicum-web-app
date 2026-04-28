@@ -153,7 +153,7 @@
           </aside>
 
           <div class="map-panel">
-            <div id="map" aria-label="Philadelphia results map"></div>
+            <div id="map" data-lenis-prevent aria-label="Philadelphia results map"></div>
             <aside class="feature-panel" id="feature-panel">
               <p class="feature-panel-tag">Selection</p>
               <h3>Map feature details</h3>
@@ -240,5 +240,7 @@
   ></script>
   <script src="./data-bundle.js"></script>
   <script src="./app.js" type="module"></script>
+  <script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js" defer></script>
+  <script src="./interactions.js" defer></script>
 </body>
 </html>

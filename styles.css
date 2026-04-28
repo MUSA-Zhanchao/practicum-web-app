@@ -1535,6 +1535,113 @@ input:focus-visible {
 .tag--moss { background: rgba(93, 112, 82, 0.12); color: var(--primary); }
 .tag--clay { background: rgba(193, 140, 93, 0.16); color: var(--secondary); }
 
+/* =========================================================================
+   21. MOTION POLISH — reveal-on-scroll, hero entrance, ambient floats
+   Activates once `.js-ready` is set on <html> by interactions.js.
+   ========================================================================= */
+
+/* Reveal-on-scroll primitive — JS adds .reveal then .is-revealed */
+.js-ready .reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 800ms cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0ms),
+    transform 800ms cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0ms);
+  will-change: transform, opacity;
+}
+
+.js-ready .reveal.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Hero entrance — staged cascade on first paint (homepage) */
+.js-ready .hero .eyebrow,
+.js-ready .hero h1,
+.js-ready .hero .hero-text,
+.js-ready .hero .hero-actions {
+  opacity: 0;
+  animation: heroIn 950ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: var(--hero-delay, 0ms);
+}
+.js-ready .hero .eyebrow      { --hero-delay: 200ms; }
+.js-ready .hero h1            { --hero-delay: 380ms; }
+.js-ready .hero .hero-text    { --hero-delay: 720ms; }
+.js-ready .hero .hero-actions { --hero-delay: 920ms; }
+
+@keyframes heroIn {
+  from { opacity: 0; transform: translateY(32px); filter: blur(4px); }
+  to   { opacity: 1; transform: translateY(0);    filter: blur(0); }
+}
+
+/* Continuous gentle floats for ambient blobs */
+@keyframes floatA {
+  0%, 100% { translate: 0 0; }
+  50%      { translate: 0 -18px; }
+}
+@keyframes floatB {
+  0%, 100% { translate: 0 0; }
+  50%      { translate: 0 14px; }
+}
+
+.hero:not(.hero--video) .blob--a { animation: floatA 9s ease-in-out infinite; }
+.hero:not(.hero--video) .blob--b { animation: floatB 11s ease-in-out infinite; }
+.cta-card .blob--a { animation: floatA 10s ease-in-out infinite; }
+.cta-card .blob--b { animation: floatB 12s ease-in-out infinite; }
+
+/* Step number — gentle wobble keeps the organic shape feeling alive */
+.step-num { animation: stepWobble 5s ease-in-out infinite; transform-origin: center; }
+@keyframes stepWobble {
+  0%, 100% { rotate: -3deg; }
+  50%      { rotate: 3deg; }
+}
+
+/* Illustration — slow zoom on hover */
+.illustration img { transition: transform 700ms cubic-bezier(0.4, 0, 0.2, 1); }
+.illustration:hover img { transform: scale(1.02); }
+
+/* Stat number — subtle settle once it lands (counter handles the count itself) */
+.stat-value { display: inline-block; transition: transform var(--t-base); }
+
+/* Scroll hint — small badge near bottom of the video hero */
+.scroll-hint {
+  position: absolute;
+  bottom: 1.75rem;
+  left: 50%;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 1.05rem;
+  border-radius: var(--r-pill);
+  background: rgba(44, 44, 36, 0.38);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  color: rgba(243, 244, 241, 0.92);
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  font-weight: 700;
+  text-transform: uppercase;
+  border: 1px solid rgba(243, 244, 241, 0.18);
+  pointer-events: none;
+  animation: scrollHint 2.4s ease-in-out infinite;
+}
+.scroll-hint svg { width: 0.85rem; height: 0.85rem; }
+@keyframes scrollHint {
+  0%, 100% { translate: -50% 0;  opacity: 0.7; }
+  50%      { translate: -50% 8px; opacity: 1; }
+}
+
+/* Card lift — tighten the existing transition for a snappier hover feel */
+.card { transition: transform 450ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 450ms cubic-bezier(0.22, 1, 0.36, 1); }
+
+/* Tile lift on hover — slight tilt + lift (already partially defined) */
+.tile { transition: transform 500ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 500ms cubic-bezier(0.22, 1, 0.36, 1); }
+
+/* Lenis-driven smooth scroll: html overflow stays the same, but disable native smooth */
+html.lenis, html.lenis body { height: auto; }
+html.lenis-smooth { scroll-behavior: auto !important; }
+
 /* Reduce motion */
 @media (prefers-reduced-motion: reduce) {
   * {
@@ -1542,4 +1649,24 @@ input:focus-visible {
     transition-duration: 0.01ms !important;
   }
   html { scroll-behavior: auto; }
+
+  .js-ready .reveal {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .js-ready .hero .eyebrow,
+  .js-ready .hero h1,
+  .js-ready .hero .hero-text,
+  .js-ready .hero .hero-actions {
+    opacity: 1 !important;
+    animation: none !important;
+  }
+  .hero:not(.hero--video) .blob--a,
+  .hero:not(.hero--video) .blob--b,
+  .cta-card .blob--a,
+  .cta-card .blob--b,
+  .step-num,
+  .scroll-hint {
+    animation: none !important;
+  }
 }
