@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Deep Learning 101 for Planners — Streetscape AI</title>
+  <title>Deep Learning 101 for Planners | Streetscape AI</title>
   <meta name="description" content="A planner-friendly introduction to deep learning, why it works for streetscape data, and the two model families (YOLO and U-Net) that power this site.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -96,7 +96,7 @@
           <p>
             <strong>Deep learning is a learning system that improves by example.</strong> You show it a few
             thousand photos of crosswalks (with the answer key), and it gradually figures out what crosswalks
-            <em>look like</em> — including the cases you couldn't articulate as a rule.
+            <em>look like</em>, including the cases you couldn't articulate as a rule.
           </p>
           <p>
             The "deep" part refers to the model's many internal layers. Each layer notices something a little
@@ -107,9 +107,14 @@
           <div class="callout callout--moss">
             <p>Think of it like training a junior planner. You don't write down a rule for "what counts as a
             faded crosswalk." You walk them around for a week with a clipboard, and after a few hundred
-            examples they just <em>know</em>. Deep learning works the same way — the photos are the walks,
+            examples they just <em>know</em>. Deep learning works the same way: the photos are the walks,
             the labels are the clipboard.</p>
           </div>
+
+          <figure class="illustration" style="max-width: 640px; margin: 2rem auto;">
+            <img src="./assets/deep-learning.png" alt="Diagram illustrating how deep learning layers process visual input from raw pixels up to high-level concepts like crosswalk detection" loading="lazy">
+            <figcaption class="illustration-caption">From pixels to predictions: each layer in a deep network builds on the last, turning raw image data into actionable insights.</figcaption>
+          </figure>
 
           <h2>How it differs from traditional GIS rules</h2>
           <p>
@@ -117,15 +122,15 @@
             world matches the rule. It breaks the moment the world doesn't.
           </p>
           <p>
-            Deep learning is the opposite. It's vague where rules are precise — and resilient where rules are
+            Deep learning is the opposite. It's vague where rules are precise, and resilient where rules are
             brittle. It learns patterns the analyst hasn't articulated yet, which is exactly why it's good at
             messy, photographic data like aerial tiles and Street View frames.
           </p>
 
           <h3>Where each one belongs</h3>
           <ul>
-            <li><strong>Rules</strong> — when the data is clean and the logic is well understood (zoning queries, buffer overlays, slope thresholds).</li>
-            <li><strong>Deep learning</strong> — when the data is unstructured (photos, audio, free text) and the patterns are visual or contextual.</li>
+            <li><strong>Rules</strong>: when the data is clean and the logic is well understood (zoning queries, buffer overlays, slope thresholds).</li>
+            <li><strong>Deep learning</strong>: when the data is unstructured (photos, audio, free text) and the patterns are visual or contextual.</li>
             <li><strong>Both, usually.</strong> Deep learning generates the layer; rules clean it up and put it in the right place on the map.</li>
           </ul>
         </div>
@@ -144,7 +149,7 @@
             piles of pixels and a layer a planner can actually use.
           </p>
           <p>
-            Once the model is trained, refreshing the layer is roughly as expensive as the imagery itself —
+            Once the model is trained, refreshing the layer is roughly as expensive as the imagery itself,
             far cheaper than commissioning a windshield survey, and consistent across neighborhoods that
             otherwise get audited at very different cadences.
           </p>
@@ -170,7 +175,7 @@
         <div class="tile-links">
           <a class="tile" href="./yolo.html">
             <p class="tile-eyebrow">Object detection</p>
-            <h3>YOLO — "What's in this photo, and where?"</h3>
+            <h3>YOLO: "What's in this photo, and where?"</h3>
             <p>Draws a box around each object and labels it. We use it on Street View images to find stop signs and traffic lights, with confidence scores you can threshold.</p>
             <p class="text-muted mt-4"><strong style="color:var(--primary);">Best at:</strong> discrete things you could point to. <strong style="color:var(--primary);">Struggles with:</strong> partially hidden objects, glare, weird angles.</p>
             <span class="tile-arrow">Read YOLO 101 →</span>
@@ -178,7 +183,7 @@
 
           <a class="tile" href="./unet.html">
             <p class="tile-eyebrow">Semantic segmentation</p>
-            <h3>U-Net — "Which pixels are the thing I care about?"</h3>
+            <h3>U-Net: "Which pixels are the thing I care about?"</h3>
             <p>Classifies <em>every pixel</em>. We use it on aerial tiles to find crosswalk paint, producing polygons that can be measured, compared, and joined to other GIS layers.</p>
             <p class="text-muted mt-4"><strong style="color:var(--primary);">Best at:</strong> shapes and surfaces. <strong style="color:var(--primary);">Struggles with:</strong> visually similar paint (parking lines), snow or leaf cover, deeply faded markings.</p>
             <span class="tile-arrow">Read U-Net 101 →</span>

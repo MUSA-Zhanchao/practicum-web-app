@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>U-Net 101 — Segmentation for Planners — Streetscape AI</title>
+  <title>U-Net 101: Segmentation for Planners | Streetscape AI</title>
   <meta name="description" content="A planner-friendly explanation of U-Net semantic segmentation: how it outlines crosswalk paint pixel-by-pixel, why its U-shape matters, and where it works (and doesn't).">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -80,7 +80,7 @@
           <p class="eyebrow">U-Net · Semantic segmentation</p>
           <h1>U-Net: outlining the <em>shapes</em> that matter.</h1>
           <p class="hero-text">
-            We use U-Net to find crosswalk paint in aerial imagery — every pixel, every block. Here's how it
+            We use U-Net to find crosswalk paint in aerial imagery, covering every pixel and every block. Here's how it
             works, why its "U" shape is unusually well-suited to the job, and where it gets fooled.
           </p>
         </div>
@@ -100,7 +100,7 @@
           </p>
           <p>
             That distinction matters for planners. A bounding box gives you a rough location. A pixel mask
-            gives you a <strong>shape you can measure</strong> — area, length, width, orientation — and
+            gives you a <strong>shape you can measure</strong> (area, length, width, orientation) and
             convert into a polygon you can drop straight into ArcGIS or QGIS.
           </p>
 
@@ -191,7 +191,7 @@
               <text x="218" y="342" fill="#2C2C24">skip connections (preserve detail)</text>
             </g>
           </svg>
-          <p class="diagram-caption">The encoder loses spatial detail in exchange for understanding. The decoder gets it back. Skip connections let the model reconstruct sharp boundaries — exactly what crosswalk edges need.</p>
+          <p class="diagram-caption">The encoder loses spatial detail in exchange for understanding. The decoder gets it back. Skip connections let the model reconstruct sharp boundaries, exactly what crosswalk edges need.</p>
         </div>
       </div>
     </section>
@@ -310,8 +310,8 @@
           <article class="card card--asym">
             <h3>Precision · Recall</h3>
             <div class="width-summary mt-4">
-              <div class="width-pill"><strong>0.93</strong>Precision — true positive rate</div>
-              <div class="width-pill"><strong>0.95</strong>Recall — coverage of real paint</div>
+              <div class="width-pill"><strong>0.93</strong>Precision: true positive rate</div>
+              <div class="width-pill"><strong>0.95</strong>Recall: coverage of real paint</div>
             </div>
             <p class="mt-6 text-muted">Recall slightly outpaces precision: the model errs toward finding everything painted, then we filter.</p>
           </article>
@@ -336,7 +336,7 @@
           <h2>Where U-Net stumbles.</h2>
           <ul>
             <li><strong>Look-alike paint.</strong> Parking-lot striping, loading-zone hatching, and bus-bay markings can all read as "crosswalk-ish" depending on resolution and angle. Most are filterable; some aren't.</li>
-            <li><strong>Faded markings.</strong> Very faded paint produces low-confidence pixels that may fall below the threshold and disappear. That's a gap in <em>data quality</em>, not a model failure — but it shows up in the layer the same way.</li>
+            <li><strong>Faded markings.</strong> Very faded paint produces low-confidence pixels that may fall below the threshold and disappear. That's a gap in <em>data quality</em>, not a model failure, but it shows up in the layer the same way.</li>
             <li><strong>Snow, leaves, shadows.</strong> Anything that occludes or distorts the visual signal of paint will hurt segmentation quality. The imagery's seasonal vintage matters.</li>
             <li><strong>New construction.</strong> If a crosswalk was painted after the imagery vintage, the model can't see it. The output is only as fresh as the tiles.</li>
           </ul>
@@ -361,7 +361,7 @@
           <a class="tile" href="./yolo.html">
             <p class="tile-eyebrow">Companion model · Detection</p>
             <h3>YOLO 101</h3>
-            <p>U-Net handles paint; YOLO handles signs and lights. Same project, different question — boxes instead of pixels.</p>
+            <p>U-Net handles paint; YOLO handles signs and lights. Same project, different question: boxes instead of pixels.</p>
             <span class="tile-arrow">Read YOLO 101 →</span>
           </a>
           <a class="tile" href="./app.html">

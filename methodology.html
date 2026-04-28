@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Data Pipeline & Methodology — Streetscape AI</title>
+  <title>Data Pipeline & Methodology | Streetscape AI</title>
   <meta name="description" content="How the streetscape AI workflow turns aerial imagery and Street View into crosswalk polygons, traffic-control points, and crossing-width attributes.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -93,7 +93,7 @@
         <div class="section-heading">
           <p class="eyebrow">At a glance</p>
           <h2>The pipeline, in <em style="font-style: italic; color: var(--primary); font-variation-settings: 'SOFT' 100, 'WONK' 1, 'opsz' 144;">one</em> frame.</h2>
-          <p>Before we walk through inputs, models, and outputs separately — here's the whole thing in a single picture: what gets detected on the street, what's measured from above, and what lands in your GIS as planner-ready summaries.</p>
+          <p>Before we walk through inputs, models, and outputs separately. Here's the whole thing in a single picture: what gets detected on the street, what's measured from above, and what lands in your GIS as planner-ready summaries.</p>
         </div>
 
         <figure class="illustration" style="margin: 0;">
@@ -138,7 +138,7 @@
         <div class="section-heading">
           <p class="eyebrow">The three pipelines</p>
           <h2>Two computer-vision models, one planning interface.</h2>
-          <p>Each pipeline owns a single, defensible output. We resisted the urge to merge them into a single model — separate pipelines are easier to retrain, audit, and explain.</p>
+          <p>Each pipeline owns a single, defensible output. We resisted the urge to merge them into a single model; separate pipelines are easier to retrain, audit, and explain.</p>
         </div>
 
         <div class="grid grid--3">
@@ -147,11 +147,11 @@
             <h3>YOLO detection</h3>
             <p>Fine-tuned object detection extracts stop signs and traffic lights from intersection-facing imagery. Outputs are point features with confidence scores, exported per neighborhood as GeoJSON and CSV.</p>
             <ul class="mt-4">
-              <li>Stop-sign F1 — <strong style="color:var(--primary);">0.77</strong></li>
-              <li>Traffic-light F1 — <strong style="color:var(--primary);">0.58</strong></li>
+              <li>Stop-sign F1: <strong style="color:var(--primary);">0.77</strong></li>
+              <li>Traffic-light F1: <strong style="color:var(--primary);">0.58</strong></li>
               <li>Outputs include detection confidence and Street View metadata</li>
             </ul>
-            <p class="mt-6"><a href="./yolo.html"><strong>YOLO 101 — what it is, what it sees →</strong></a></p>
+            <p class="mt-6"><a href="./yolo.html"><strong>YOLO 101: what it is, what it sees →</strong></a></p>
           </article>
 
           <article class="card card--asym card--hover">
@@ -159,11 +159,11 @@
             <h3>U-Net segmentation</h3>
             <p>Crosswalk markings are segmented from 15 cm/pixel aerial imagery to produce polygon outputs at scale. The U-Net architecture handles per-pixel classification well, even on faded paint.</p>
             <ul class="mt-4">
-              <li>Crosswalk F1 — <strong style="color:var(--primary);">0.94</strong></li>
+              <li>Crosswalk F1: <strong style="color:var(--primary);">0.94</strong></li>
               <li>Precision <strong style="color:var(--primary);">0.93</strong> · Recall <strong style="color:var(--primary);">0.95</strong></li>
               <li>Deployable across multiple Philadelphia study areas</li>
             </ul>
-            <p class="mt-6"><a href="./unet.html"><strong>U-Net 101 — why "U-shaped" matters →</strong></a></p>
+            <p class="mt-6"><a href="./unet.html"><strong>U-Net 101: why "U-shaped" matters →</strong></a></p>
           </article>
 
           <article class="card card--asym card--hover">
@@ -316,7 +316,7 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3v18"/></svg>
             </div>
             <h3>Intersection points</h3>
-            <p>Detected intersections plus the Street View sampling points the model used — easy to inspect and validate.</p>
+            <p>Detected intersections plus the Street View sampling points the model used, easy to inspect and validate.</p>
           </article>
           <article class="card card--asym card--hover">
             <div class="card-icon" aria-hidden="true">
@@ -330,7 +330,7 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14v16H5z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>
             </div>
             <h3>Crosswalk polygons</h3>
-            <p>U-Net polygon layers from aerial imagery — the foundation for future condition monitoring as imagery refreshes.</p>
+            <p>U-Net polygon layers from aerial imagery, the foundation for future condition monitoring as imagery refreshes.</p>
           </article>
         </div>
       </div>
@@ -350,7 +350,7 @@
             <ul class="mt-4">
               <li><strong style="color:var(--secondary);">Pilot-area training data.</strong> Models were tuned on a subset of Philadelphia. Performance on architecturally distinct neighborhoods is untested.</li>
               <li><strong style="color:var(--secondary);">No citywide ground-truth audit yet.</strong> Validation was done on hand-labeled tiles, not field-walked corridors.</li>
-              <li><strong style="color:var(--secondary);">Lower recall for traffic lights</strong> in complex scenes — backlight, foliage, and far-away hardware all degrade detection.</li>
+              <li><strong style="color:var(--secondary);">Lower recall for traffic lights</strong> in complex scenes; backlight, foliage, and far-away hardware all degrade detection.</li>
               <li><strong style="color:var(--secondary);">Crossing widths are screening estimates,</strong> not engineering survey replacements.</li>
             </ul>
           </article>
@@ -358,7 +358,7 @@
             <h3>Next steps</h3>
             <ul class="mt-4">
               <li>Expand validation with field-walked corridors and crash-data joins.</li>
-              <li>Connect outputs to accessibility datasets — curb ramps, ADA inventories, transit stops.</li>
+              <li>Connect outputs to accessibility datasets: curb ramps, ADA inventories, transit stops.</li>
               <li>Extend the workflow to additional cities and street types beyond Philadelphia.</li>
               <li>Add a feedback loop where planners can flag false positives, feeding the next training cycle.</li>
             </ul>
