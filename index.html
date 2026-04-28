@@ -67,9 +67,20 @@
 
   <main class="page-shell">
     <!-- =================== HERO =================== -->
-    <section class="hero">
-      <div class="blob blob--moss blob--s1 blob--a"></div>
-      <div class="blob blob--clay blob--s3 blob--b"></div>
+    <section class="hero hero--video">
+      <video
+        class="hero-video"
+        autoplay
+        loop
+        muted
+        playsinline
+        preload="metadata"
+        poster="./assets/hero-poster.jpg"
+        aria-hidden="true">
+        <source src="./assets/hero.mp4" type="video/mp4">
+        <source src="./assets/hero.webm" type="video/webm">
+      </video>
+      <div class="hero-scrim" aria-hidden="true"></div>
 
       <div class="container">
         <div class="hero-inner">

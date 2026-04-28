@@ -715,6 +715,70 @@ p + p {
   bottom: -10rem; left: -8rem;
 }
 
+/* Video-backed hero (homepage opening scene) */
+.hero--video {
+  min-height: 78vh;
+  margin-bottom: 2rem;
+  border-radius: var(--r-2xl);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  isolation: isolate;
+  /* Fallback color before media loads or if it fails */
+  background: linear-gradient(135deg, #5D7052 0%, #3f4f37 100%);
+}
+
+.hero-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.hero-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg,
+      rgba(44, 44, 36, 0.55) 0%,
+      rgba(44, 44, 36, 0.18) 35%,
+      rgba(44, 44, 36, 0.70) 100%),
+    linear-gradient(90deg,
+      rgba(44, 44, 36, 0.55) 0%,
+      rgba(44, 44, 36, 0.05) 55%);
+}
+
+.hero--video .container { position: relative; z-index: 2; }
+.hero--video .hero-inner { padding: 4rem 0; }
+
+/* Light-on-dark text overrides — only inside the video hero */
+.hero--video .eyebrow { color: var(--accent); }
+.hero--video h1 { color: var(--primary-fg); text-shadow: 0 2px 24px rgba(0, 0, 0, 0.25); }
+.hero--video h1 em { color: #D2DEC3; font-variation-settings: "SOFT" 100, "WONK" 1, "opsz" 144; }
+.hero--video .hero-text { color: rgba(243, 244, 241, 0.92); }
+
+.hero--video .btn--outline {
+  color: var(--primary-fg);
+  box-shadow: inset 0 0 0 2px rgba(243, 244, 241, 0.85);
+  backdrop-filter: blur(4px);
+  background: rgba(44, 44, 36, 0.18);
+}
+.hero--video .btn--outline:hover {
+  color: var(--primary);
+  background: var(--primary-fg);
+  box-shadow: inset 0 0 0 2px var(--primary-fg);
+}
+
+/* Pause autoplay for reduced-motion users (visual fallback handled by poster) */
+@media (prefers-reduced-motion: reduce) {
+  .hero-video { display: none; }
+}
+
 /* ---------- 11. Stats strip ---------- */
 .stats {
   display: grid;
@@ -1362,6 +1426,38 @@ input:focus-visible {
   color: var(--muted-fg);
   font-style: italic;
   text-align: center;
+}
+
+/* Illustration frame — for raster visuals (concept boards, screenshots) */
+.illustration {
+  margin: 1.5rem 0 0;
+  padding: 0.75rem;
+  background: var(--surface);
+  border: 1px solid rgba(222, 216, 207, 0.6);
+  border-radius: 3rem 1.5rem 3rem 1.5rem;
+  box-shadow: var(--shadow-float);
+  transition: transform var(--t-base), box-shadow var(--t-base);
+}
+
+.illustration:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lift);
+}
+
+.illustration img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 2.5rem 1rem 2.5rem 1rem;
+}
+
+.illustration-caption {
+  margin: 1rem 0.5rem 0.25rem;
+  font-size: 0.9rem;
+  color: var(--muted-fg);
+  font-style: italic;
+  text-align: center;
+  line-height: 1.5;
 }
 
 /* ---------- 19. Footer ---------- */
