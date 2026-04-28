@@ -307,7 +307,7 @@ function loadNeighborhood(neighborhood) {
   });
 
   syncLayerVisibility();
-  fitToVisibleData();
+  fitToDetectionData();
   renderNeighborhoodSummary(neighborhood, intersections, trafficLights, stopSigns);
   resetFeaturePanel();
 }
@@ -341,6 +341,23 @@ function fitToVisibleData() {
 
   const merged = bounds.reduce((acc, current) => acc.extend(current), bounds[0]);
   map.fitBounds(merged.pad(0.08), { animate: false });
+}
+
+function fitToDetectionData() {
+  const detectionLayers = [layerState.intersections, layerState.trafficLights, layerState.stopSigns]
+    .filter(Boolean);
+
+  const bounds = detectionLayers
+    .map((layer) => layer.getBounds?.())
+    .filter((b) => b && b.isValid());
+
+  if (bounds.length === 0) {
+    fitToVisibleData();
+    return;
+  }
+
+  const merged = bounds.reduce((acc, b) => acc.extend(b), bounds[0]);
+  map.fitBounds(merged.pad(0.12), { animate: true });
 }
 
 function clearMapLayers() {
