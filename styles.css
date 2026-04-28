@@ -1491,9 +1491,25 @@ input:focus-visible {
 
 @media (min-width: 768px) {
   .footer-inner {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: 1fr auto auto;
     gap: 2rem;
+    align-items: start;
   }
+}
+
+.footer-team {
+  font-size: 0.9rem;
+  color: var(--muted-fg);
+  line-height: 1.7;
+}
+
+.footer-team-label {
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg);
+  margin-bottom: 0.35rem;
 }
 
 .footer-brand {
