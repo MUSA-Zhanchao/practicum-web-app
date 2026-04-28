@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Explorer — Streetscape AI</title>
+  <meta name="description" content="Interactive explorer for the streetscape AI project: browse detected crosswalks, traffic controls, and crossing widths by Philadelphia neighborhood.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..900,0..100,0..1;1,9..144,300..900,0..100,0..1&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  >
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <!-- =================== NAV =================== -->
+  <div class="nav-wrap">
+    <nav class="nav" aria-label="Primary">
+      <a href="./index.html" class="nav-logo" aria-label="Streetscape AI home">
+        <span class="nav-logo-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s-7-7-7-12a7 7 0 0 1 14 0c0 5-7 12-7 12Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+        </span>
+        <span>Streetscape AI</span>
+      </a>
+      <ul class="nav-menu">
+        <li><a class="nav-link" href="./index.html">Overview</a></li>
+        <li><a class="nav-link" href="./methodology.html">Data pipeline</a></li>
+        <li class="nav-dropdown">
+          <button class="nav-trigger" type="button" aria-haspopup="true" aria-expanded="false">
+            Deep learning 101
+            <svg class="chev" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 8 10 13 15 8"/></svg>
+          </button>
+          <ul class="nav-dropdown-menu" role="menu">
+            <li role="none"><a role="menuitem" href="./deep-learning.html">Deep learning overview <span class="sub">What it is and why it works for streetscapes</span></a></li>
+            <li role="none"><a role="menuitem" href="./yolo.html">YOLO 101 <span class="sub">Object detection — stop signs &amp; lights</span></a></li>
+            <li role="none"><a role="menuitem" href="./unet.html">U-Net 101 <span class="sub">Segmentation — crosswalk paint</span></a></li>
+          </ul>
+        </li>
+        <li>
+          <a class="nav-cta" href="./app.html" aria-current="page">
+            Explorer
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="10" x2="16" y2="10"/><polyline points="11 5 16 10 11 15"/></svg>
+          </a>
+        </li>
+      </ul>
+      <details class="nav-mobile">
+        <summary aria-label="Toggle menu">
+          <svg class="icon-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+          <svg class="icon-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+        </summary>
+        <div class="nav-mobile-panel">
+          <a href="./index.html">Overview</a>
+          <a href="./methodology.html">Data pipeline</a>
+          <details>
+            <summary>Deep learning 101</summary>
+            <div class="nav-mobile-sub">
+              <a href="./deep-learning.html">Deep learning overview</a>
+              <a href="./yolo.html">YOLO 101</a>
+              <a href="./unet.html">U-Net 101</a>
+            </div>
+          </details>
+          <a href="./app.html" class="nav-cta">Explorer</a>
+        </div>
+      </details>
+    </nav>
+  </div>
+
+  <main class="page-shell">
+    <!-- =================== HERO =================== -->
+    <section class="hero" style="padding-bottom: 3rem;">
+      <div class="blob blob--moss blob--s1 blob--a"></div>
+      <div class="blob blob--clay blob--s4 blob--b"></div>
+      <div class="container">
+        <div class="hero-inner">
+          <p class="eyebrow">Explorer</p>
+          <h1>Browse the detection layers <em>by neighborhood</em>.</h1>
+          <p class="hero-text">
+            Pick a neighborhood, toggle layers, and click a feature to inspect attributes and jump straight
+            into Google Street View for visual verification.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== HOW TO USE =================== -->
+    <section class="section section--tight" style="padding-top: 0;">
+      <div class="container">
+        <div class="grid grid--3">
+          <article class="step">
+            <span class="step-num">1</span>
+            <h3>Pick a neighborhood</h3>
+            <p>Use the dropdown in the control panel. The map zooms to its detected intersections, traffic controls, and sidewalks.</p>
+          </article>
+          <article class="step">
+            <span class="step-num">2</span>
+            <h3>Toggle layers</h3>
+            <p>Show or hide sidewalks, intersections, traffic lights, and stop signs to focus on what's relevant for your question.</p>
+          </article>
+          <article class="step">
+            <span class="step-num">3</span>
+            <h3>Click to verify</h3>
+            <p>Click any point. The right-hand panel shows model attributes plus a Street View link to confirm before citing.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== EXPLORER =================== -->
+    <section class="section section--stone" style="padding-top: 2rem;">
+      <div class="container">
+        <div class="explorer-layout">
+          <aside class="control-panel" aria-label="Map controls">
+            <div class="control-group">
+              <label for="neighborhood-select">Neighborhood</label>
+              <select id="neighborhood-select"></select>
+            </div>
+
+            <div class="control-group">
+              <span>Layers</span>
+              <label class="toggle">
+                <input type="checkbox" id="toggle-sidewalks" checked>
+                <span>Regional sidewalks</span>
+              </label>
+              <label class="toggle">
+                <input type="checkbox" id="toggle-intersections" checked>
+                <span>Detected intersections</span>
+              </label>
+              <label class="toggle">
+                <input type="checkbox" id="toggle-traffic" checked>
+                <span>Traffic lights</span>
+              </label>
+              <label class="toggle">
+                <input type="checkbox" id="toggle-stop-signs" checked>
+                <span>Stop signs</span>
+              </label>
+            </div>
+
+            <div class="mini-summary" id="neighborhood-summary">
+              <h3>Neighborhood snapshot</h3>
+              <p>Select a neighborhood to load its Street View detections and matching sidewalk context.</p>
+            </div>
+
+            <div class="legend">
+              <div><span class="swatch swatch-sidewalk"></span>Sidewalk centerlines</div>
+              <div><span class="swatch swatch-intersection"></span>Detected intersections</div>
+              <div><span class="swatch swatch-traffic"></span>Traffic lights</div>
+              <div><span class="swatch swatch-stop"></span>Stop signs</div>
+            </div>
+          </aside>
+
+          <div class="map-panel">
+            <div id="map" aria-label="Philadelphia results map"></div>
+            <aside class="feature-panel" id="feature-panel">
+              <p class="feature-panel-tag">Selection</p>
+              <h3>Map feature details</h3>
+              <p>Click a point on the map to inspect model outputs, location details, and Street View links.</p>
+            </aside>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== METRICS =================== -->
+    <section class="section">
+      <div class="container">
+        <div class="section-heading">
+          <p class="eyebrow">At a glance</p>
+          <h2>Detection coverage, crossing widths, and training fit.</h2>
+          <p>These cards update as new pilot results land. They're the same numbers that back the methodology — surfaced here so you can sanity-check what the map is showing.</p>
+        </div>
+
+        <div class="grid grid--3">
+          <article class="card card--asym">
+            <h3>Detection coverage by neighborhood</h3>
+            <div id="coverage-chart" class="bar-chart"></div>
+          </article>
+          <article class="card card--asym">
+            <h3>Crossing-width distribution</h3>
+            <div class="width-summary" id="width-summary"></div>
+          </article>
+          <article class="card card--asym">
+            <h3>Training curve snapshot</h3>
+            <div id="training-history" class="history-list"></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== COMING SOON =================== -->
+    <section class="section section--sand">
+      <div class="container container--narrow">
+        <div class="card card--asym" style="text-align: center; padding: 3rem 2rem;">
+          <p class="eyebrow">In progress</p>
+          <h2>More functionality is on the way.</h2>
+          <p class="lead mt-6 text-muted" style="max-width: 36rem; margin-left:auto; margin-right:auto;">
+            The explorer will grow side-by-side with planning workflows: corridor draw-and-export,
+            confidence threshold filtering, crash-data overlays, and downloadable bundles per neighborhood.
+            Ideas for what you'd want here? Tell the team.
+          </p>
+          <div class="hero-actions" style="justify-content: center; margin-top: 2rem;">
+            <a href="./methodology.html" class="btn btn--primary">
+              Read the methodology
+              <svg class="arrow" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="10" x2="16" y2="10"/><polyline points="11 5 16 10 11 15"/></svg>
+            </a>
+            <a href="./deep-learning.html" class="btn btn--ghost">DL 101 for planners</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== FOOTER =================== -->
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-inner">
+          <div>
+            <p class="footer-brand">Streetscape AI</p>
+            <p>MUSA Practicum · University of Pennsylvania · Spring 2026</p>
+          </div>
+          <div class="footer-links">
+            <a href="./index.html">Overview</a>
+            <a href="./methodology.html">Methodology</a>
+            <a href="./deep-learning.html">DL 101</a>
+            <a href="./yolo.html">YOLO</a>
+            <a href="./unet.html">U-Net</a>
+            <a href="./app.html">App</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+  <script src="./data-bundle.js"></script>
+  <script src="./app.js" type="module"></script>
+</body>
+</html>

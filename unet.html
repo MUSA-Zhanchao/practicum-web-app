@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>U-Net 101 — Segmentation for Planners — Streetscape AI</title>
+  <meta name="description" content="A planner-friendly explanation of U-Net semantic segmentation: how it outlines crosswalk paint pixel-by-pixel, why its U-shape matters, and where it works (and doesn't).">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..900,0..100,0..1;1,9..144,300..900,0..100,0..1&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <!-- =================== NAV =================== -->
+  <div class="nav-wrap">
+    <nav class="nav" aria-label="Primary">
+      <a href="./index.html" class="nav-logo" aria-label="Streetscape AI home">
+        <span class="nav-logo-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s-7-7-7-12a7 7 0 0 1 14 0c0 5-7 12-7 12Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+        </span>
+        <span>Streetscape AI</span>
+      </a>
+      <ul class="nav-menu">
+        <li><a class="nav-link" href="./index.html">Overview</a></li>
+        <li><a class="nav-link" href="./methodology.html">Data pipeline</a></li>
+        <li class="nav-dropdown">
+          <button class="nav-trigger" type="button" aria-haspopup="true" aria-expanded="false">
+            Deep learning 101
+            <svg class="chev" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 8 10 13 15 8"/></svg>
+          </button>
+          <ul class="nav-dropdown-menu" role="menu">
+            <li role="none"><a role="menuitem" href="./deep-learning.html">Deep learning overview <span class="sub">What it is and why it works for streetscapes</span></a></li>
+            <li role="none"><a role="menuitem" href="./yolo.html">YOLO 101 <span class="sub">Object detection — stop signs &amp; lights</span></a></li>
+            <li role="none"><a role="menuitem" href="./unet.html" aria-current="page">U-Net 101 <span class="sub">Segmentation — crosswalk paint</span></a></li>
+          </ul>
+        </li>
+        <li>
+          <a class="nav-cta" href="./app.html">
+            Open the app
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="10" x2="16" y2="10"/><polyline points="11 5 16 10 11 15"/></svg>
+          </a>
+        </li>
+      </ul>
+      <details class="nav-mobile">
+        <summary aria-label="Toggle menu">
+          <svg class="icon-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+          <svg class="icon-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+        </summary>
+        <div class="nav-mobile-panel">
+          <a href="./index.html">Overview</a>
+          <a href="./methodology.html">Data pipeline</a>
+          <details>
+            <summary>Deep learning 101</summary>
+            <div class="nav-mobile-sub">
+              <a href="./deep-learning.html">Deep learning overview</a>
+              <a href="./yolo.html">YOLO 101</a>
+              <a href="./unet.html">U-Net 101</a>
+            </div>
+          </details>
+          <a href="./app.html" class="nav-cta">Open the app</a>
+        </div>
+      </details>
+    </nav>
+  </div>
+
+  <main class="page-shell">
+    <!-- =================== HERO =================== -->
+    <section class="hero">
+      <div class="blob blob--moss blob--s3 blob--a"></div>
+      <div class="blob blob--sand blob--s6 blob--b"></div>
+      <div class="container">
+        <div class="hero-inner">
+          <p class="eyebrow">U-Net · Semantic segmentation</p>
+          <h1>U-Net: outlining the <em>shapes</em> that matter.</h1>
+          <p class="hero-text">
+            We use U-Net to find crosswalk paint in aerial imagery — every pixel, every block. Here's how it
+            works, why its "U" shape is unusually well-suited to the job, and where it gets fooled.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== WHAT IT IS =================== -->
+    <section class="section section--tight">
+      <div class="container container--prose">
+        <div class="prose">
+          <p class="eyebrow">Plain-language definition</p>
+          <h2>What is U-Net?</h2>
+          <p>
+            <strong>U-Net is a semantic segmentation model.</strong> Where YOLO draws boxes, U-Net classifies
+            <em>every pixel</em>. Show it an aerial tile and it returns a mask of the same size, with each
+            pixel labeled <em>"crosswalk"</em> or <em>"not crosswalk."</em>
+          </p>
+          <p>
+            That distinction matters for planners. A bounding box gives you a rough location. A pixel mask
+            gives you a <strong>shape you can measure</strong> — area, length, width, orientation — and
+            convert into a polygon you can drop straight into ArcGIS or QGIS.
+          </p>
+
+          <div class="callout callout--moss">
+            <p>If YOLO is a quick spotter, U-Net is a careful colorist. It doesn't say <em>"there's a
+            crosswalk over there."</em> It says <em>"these exact 4,832 pixels are the crosswalk."</em></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== U-SHAPE DIAGRAM =================== -->
+    <section class="section">
+      <div class="container container--narrow">
+        <div class="section-heading section-heading--center">
+          <p class="eyebrow">Why "U-Net"?</p>
+          <h2>The architecture is shaped like the letter U.</h2>
+          <p>The left side compresses the image into "what's in it." The right side expands it back out into "where it is." Skip connections (the dashed arrows) carry fine detail across the U so the output stays sharp.</p>
+        </div>
+
+        <div class="diagram">
+          <svg viewBox="0 0 800 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="U-Net architecture diagram with encoder, bottleneck, decoder, and skip connections">
+            <defs>
+              <marker id="uarrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+                <path d="M0,0 L10,5 L0,10 L3,5 z" fill="#5D7052"/>
+              </marker>
+            </defs>
+
+            <!-- Encoder (left) — going down + getting smaller -->
+            <g>
+              <rect x="40"  y="40"  width="120" height="60" rx="14" fill="#5D7052"/>
+              <rect x="70"  y="120" width="100" height="50" rx="12" fill="#6e8362"/>
+              <rect x="100" y="190" width="80"  height="40" rx="10" fill="#7e9070"/>
+              <rect x="130" y="250" width="60"  height="34" rx="8"  fill="#8e9d80"/>
+              <text x="100" y="74"  text-anchor="middle" font-family="Nunito, sans-serif" font-size="11" font-weight="700" fill="#F3F4F1">Input tile</text>
+              <text x="120" y="148" text-anchor="middle" font-family="Nunito, sans-serif" font-size="11" font-weight="700" fill="#F3F4F1">Encode</text>
+              <text x="140" y="213" text-anchor="middle" font-family="Nunito, sans-serif" font-size="11" font-weight="700" fill="#F3F4F1">Encode</text>
+              <text x="160" y="271" text-anchor="middle" font-family="Nunito, sans-serif" font-size="10" font-weight="700" fill="#F3F4F1">Encode</text>
+            </g>
+
+            <!-- Bottleneck -->
+            <g>
+              <rect x="350" y="270" width="100" height="60" rx="14" fill="#C18C5D"/>
+              <text x="400" y="296" text-anchor="middle" font-family="Fraunces, serif" font-size="14" font-weight="700" fill="#fff">Bottleneck</text>
+              <text x="400" y="316" text-anchor="middle" font-family="Nunito, sans-serif" font-size="10" fill="#fff" opacity="0.9">"What is in it?"</text>
+            </g>
+
+            <!-- Decoder (right) — going up + getting bigger -->
+            <g>
+              <rect x="610" y="250" width="60"  height="34" rx="8"  fill="#8e9d80"/>
+              <rect x="620" y="190" width="80"  height="40" rx="10" fill="#7e9070"/>
+              <rect x="630" y="120" width="100" height="50" rx="12" fill="#6e8362"/>
+              <rect x="640" y="40"  width="120" height="60" rx="14" fill="#5D7052"/>
+              <text x="640" y="271" text-anchor="middle" font-family="Nunito, sans-serif" font-size="10" font-weight="700" fill="#F3F4F1">Decode</text>
+              <text x="660" y="213" text-anchor="middle" font-family="Nunito, sans-serif" font-size="11" font-weight="700" fill="#F3F4F1">Decode</text>
+              <text x="680" y="148" text-anchor="middle" font-family="Nunito, sans-serif" font-size="11" font-weight="700" fill="#F3F4F1">Decode</text>
+              <text x="700" y="74"  text-anchor="middle" font-family="Nunito, sans-serif" font-size="11" font-weight="700" fill="#F3F4F1">Output mask</text>
+            </g>
+
+            <!-- Down arrows (encoder flow) -->
+            <g fill="none" stroke="#5D7052" stroke-width="2" marker-end="url(#uarrow)">
+              <path d="M100,100 L120,118"/>
+              <path d="M120,170 L140,188"/>
+              <path d="M140,230 L160,248"/>
+              <path d="M190,267 C 250,267 290,300 350,300"/>
+            </g>
+
+            <!-- Up arrows (decoder flow) -->
+            <g fill="none" stroke="#5D7052" stroke-width="2" marker-end="url(#uarrow)">
+              <path d="M450,300 C 510,300 550,267 610,267"/>
+              <path d="M650,250 L660,230"/>
+              <path d="M670,190 L680,170"/>
+              <path d="M690,120 L700,100"/>
+            </g>
+
+            <!-- Skip connections (dashed across the U) -->
+            <g fill="none" stroke="#C18C5D" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#uarrow)">
+              <path d="M160,70  C 350,30  470,30  640,70"/>
+              <path d="M170,145 C 350,110 470,110 630,145"/>
+              <path d="M180,210 C 350,180 470,180 620,210"/>
+            </g>
+
+            <!-- Legend -->
+            <g font-family="Nunito, sans-serif" font-size="11">
+              <line x1="40" y1="338" x2="70" y2="338" stroke="#5D7052" stroke-width="2" marker-end="url(#uarrow)"/>
+              <text x="78" y="342" fill="#2C2C24">main flow</text>
+              <line x1="180" y1="338" x2="210" y2="338" stroke="#C18C5D" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#uarrow)"/>
+              <text x="218" y="342" fill="#2C2C24">skip connections (preserve detail)</text>
+            </g>
+          </svg>
+          <p class="diagram-caption">The encoder loses spatial detail in exchange for understanding. The decoder gets it back. Skip connections let the model reconstruct sharp boundaries — exactly what crosswalk edges need.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== BEFORE / AFTER =================== -->
+    <section class="section section--moss">
+      <div class="container container--narrow">
+        <div class="section-heading section-heading--center">
+          <p class="eyebrow">From tile to polygon</p>
+          <h2>What U-Net does to one aerial tile.</h2>
+        </div>
+
+        <div class="diagram">
+          <svg viewBox="0 0 800 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Aerial tile being converted into a segmentation mask of crosswalk paint">
+            <!-- Input tile -->
+            <g transform="translate(40,40)">
+              <rect width="200" height="200" rx="14" fill="#78786C" opacity="0.5"/>
+              <!-- intersection -->
+              <rect x="0"  y="80" width="200" height="40" fill="#5b5b54"/>
+              <rect x="80" y="0"  width="40"  height="200" fill="#5b5b54"/>
+              <!-- crosswalk paint stripes (faded) -->
+              <g fill="#F0EBE5" opacity="0.85">
+                <rect x="84" y="56" width="32" height="6"/>
+                <rect x="84" y="68" width="32" height="6"/>
+                <rect x="84" y="138" width="32" height="6"/>
+                <rect x="84" y="150" width="32" height="6"/>
+                <rect x="56" y="84" width="6" height="32"/>
+                <rect x="68" y="84" width="6" height="32"/>
+                <rect x="138" y="84" width="6" height="32"/>
+                <rect x="150" y="84" width="6" height="32"/>
+              </g>
+              <text x="100" y="232" text-anchor="middle" font-family="Nunito, sans-serif" font-size="12" font-weight="700" fill="#2C2C24">aerial tile</text>
+            </g>
+
+            <!-- Arrow -->
+            <g transform="translate(280,140)">
+              <path d="M0,0 L60,0" fill="none" stroke="#C18C5D" stroke-width="3" stroke-dasharray="6 5"/>
+              <polygon points="60,-6 72,0 60,6" fill="#C18C5D"/>
+              <text x="36" y="-12" text-anchor="middle" font-family="Fraunces, serif" font-size="13" fill="#2C2C24">U-Net</text>
+            </g>
+
+            <!-- Mask -->
+            <g transform="translate(370,40)">
+              <rect width="200" height="200" rx="14" fill="#FDFCF8" stroke="#DED8CF"/>
+              <g fill="#5D7052">
+                <rect x="84" y="56" width="32" height="6"/>
+                <rect x="84" y="68" width="32" height="6"/>
+                <rect x="84" y="138" width="32" height="6"/>
+                <rect x="84" y="150" width="32" height="6"/>
+                <rect x="56" y="84" width="6" height="32"/>
+                <rect x="68" y="84" width="6" height="32"/>
+                <rect x="138" y="84" width="6" height="32"/>
+                <rect x="150" y="84" width="6" height="32"/>
+              </g>
+              <text x="100" y="232" text-anchor="middle" font-family="Nunito, sans-serif" font-size="12" font-weight="700" fill="#2C2C24">pixel mask</text>
+            </g>
+
+            <!-- Arrow -->
+            <g transform="translate(610,140)">
+              <path d="M0,0 L40,0" fill="none" stroke="#C18C5D" stroke-width="3" stroke-dasharray="6 5"/>
+              <polygon points="40,-6 52,0 40,6" fill="#C18C5D"/>
+              <text x="26" y="-12" text-anchor="middle" font-family="Fraunces, serif" font-size="13" fill="#2C2C24">vectorize</text>
+            </g>
+
+            <!-- Polygon output -->
+            <g transform="translate(670,40)">
+              <rect width="100" height="200" rx="14" fill="#FEFEFA" stroke="#DED8CF"/>
+              <g fill="none" stroke="#C18C5D" stroke-width="2">
+                <polygon points="14,28 50,16 86,28 86,42 50,30 14,42"/>
+                <polygon points="14,80 50,68 86,80 86,94 50,82 14,94"/>
+                <polygon points="14,108 86,108 86,122 14,122"/>
+                <polygon points="14,160 86,160 86,174 14,174"/>
+              </g>
+              <text x="50" y="232" text-anchor="middle" font-family="Nunito, sans-serif" font-size="12" font-weight="700" fill="#2C2C24">GeoJSON</text>
+            </g>
+          </svg>
+          <p class="diagram-caption">Aerial tile → pixel mask → polygons. The polygons are what actually ships in the GeoJSON layer.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== HOW WE USE IT =================== -->
+    <section class="section">
+      <div class="container container--prose">
+        <div class="prose">
+          <p class="eyebrow">In our pipeline</p>
+          <h2>How we use U-Net for crosswalk segmentation.</h2>
+          <ol>
+            <li><strong>Tile.</strong> The 15 cm/pixel PASDA imagery is cut into overlapping tiles small enough to fit through the model.</li>
+            <li><strong>Predict.</strong> Each tile passes through U-Net; the output is a same-sized mask with per-pixel crosswalk probability.</li>
+            <li><strong>Stitch.</strong> Tile masks are merged into a single citywide raster, with overlap regions averaged to smooth seams.</li>
+            <li><strong>Vectorize.</strong> The raster is converted to polygons. Tiny specks are removed; long, thin painted shapes are kept.</li>
+            <li><strong>Export.</strong> The result is a GeoJSON crosswalk layer that joins to intersections, transit stops, or your priority corridors.</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== RESULTS =================== -->
+    <section class="section section--sand">
+      <div class="container">
+        <div class="section-heading">
+          <p class="eyebrow">Results</p>
+          <h2>How well it found the crosswalks.</h2>
+        </div>
+
+        <div class="grid grid--3">
+          <article class="card card--asym">
+            <h3>F1 score</h3>
+            <div class="width-summary mt-4">
+              <div class="width-pill"><strong>0.94</strong>Combined precision and recall</div>
+            </div>
+            <p class="mt-6 text-muted">A high F1 in segmentation means the model is finding most real crosswalk pixels and rarely mistaking other paint for them.</p>
+          </article>
+
+          <article class="card card--asym">
+            <h3>Precision · Recall</h3>
+            <div class="width-summary mt-4">
+              <div class="width-pill"><strong>0.93</strong>Precision — true positive rate</div>
+              <div class="width-pill"><strong>0.95</strong>Recall — coverage of real paint</div>
+            </div>
+            <p class="mt-6 text-muted">Recall slightly outpaces precision: the model errs toward finding everything painted, then we filter.</p>
+          </article>
+
+          <article class="card card--asym">
+            <h3>What it produced</h3>
+            <div class="width-summary mt-4">
+              <div class="width-pill"><strong>3,610</strong>Crosswalk polygons</div>
+              <div class="width-pill"><strong>8</strong>Philadelphia neighborhoods</div>
+            </div>
+            <p class="mt-6 text-muted">Each polygon is a planning-grade feature: usable for joining, measuring, and prioritizing.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== WHERE IT STUMBLES =================== -->
+    <section class="section">
+      <div class="container container--prose">
+        <div class="prose">
+          <p class="eyebrow">Honest limits</p>
+          <h2>Where U-Net stumbles.</h2>
+          <ul>
+            <li><strong>Look-alike paint.</strong> Parking-lot striping, loading-zone hatching, and bus-bay markings can all read as "crosswalk-ish" depending on resolution and angle. Most are filterable; some aren't.</li>
+            <li><strong>Faded markings.</strong> Very faded paint produces low-confidence pixels that may fall below the threshold and disappear. That's a gap in <em>data quality</em>, not a model failure — but it shows up in the layer the same way.</li>
+            <li><strong>Snow, leaves, shadows.</strong> Anything that occludes or distorts the visual signal of paint will hurt segmentation quality. The imagery's seasonal vintage matters.</li>
+            <li><strong>New construction.</strong> If a crosswalk was painted after the imagery vintage, the model can't see it. The output is only as fresh as the tiles.</li>
+          </ul>
+
+          <div class="callout">
+            <p><strong>Practical takeaway:</strong> the segmentation layer is excellent for "where are the
+            painted crossings <em>as of this imagery</em>." It is not a substitute for an inventory tied to a
+            permit system. Use it for screening; verify the rest with field walks.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== NEXT =================== -->
+    <section class="section section--tight">
+      <div class="container container--narrow">
+        <div class="section-heading section-heading--center">
+          <p class="eyebrow">Keep going</p>
+          <h2>Round out the picture.</h2>
+        </div>
+        <div class="tile-links">
+          <a class="tile" href="./yolo.html">
+            <p class="tile-eyebrow">Companion model · Detection</p>
+            <h3>YOLO 101</h3>
+            <p>U-Net handles paint; YOLO handles signs and lights. Same project, different question — boxes instead of pixels.</p>
+            <span class="tile-arrow">Read YOLO 101 →</span>
+          </a>
+          <a class="tile" href="./app.html">
+            <p class="tile-eyebrow">Try it</p>
+            <h3>See U-Net polygons in the explorer</h3>
+            <p>Pick a neighborhood and watch crosswalk polygons appear. Click through to verify them against Google Street View.</p>
+            <span class="tile-arrow">Open the app →</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== FOOTER =================== -->
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-inner">
+          <div>
+            <p class="footer-brand">Streetscape AI</p>
+            <p>MUSA Practicum · University of Pennsylvania · Spring 2026</p>
+          </div>
+          <div class="footer-links">
+            <a href="./index.html">Overview</a>
+            <a href="./methodology.html">Methodology</a>
+            <a href="./deep-learning.html">DL 101</a>
+            <a href="./yolo.html">YOLO</a>
+            <a href="./unet.html">U-Net</a>
+            <a href="./app.html">App</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>

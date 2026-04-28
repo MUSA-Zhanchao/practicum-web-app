@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YOLO 101 — Object Detection for Planners — Streetscape AI</title>
+  <meta name="description" content="A planner-friendly explanation of YOLO object detection: what it is, how it sees stop signs and traffic lights, and what its results mean for the streetscape pipeline.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..900,0..100,0..1;1,9..144,300..900,0..100,0..1&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <!-- =================== NAV =================== -->
+  <div class="nav-wrap">
+    <nav class="nav" aria-label="Primary">
+      <a href="./index.html" class="nav-logo" aria-label="Streetscape AI home">
+        <span class="nav-logo-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s-7-7-7-12a7 7 0 0 1 14 0c0 5-7 12-7 12Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+        </span>
+        <span>Streetscape AI</span>
+      </a>
+      <ul class="nav-menu">
+        <li><a class="nav-link" href="./index.html">Overview</a></li>
+        <li><a class="nav-link" href="./methodology.html">Data pipeline</a></li>
+        <li class="nav-dropdown">
+          <button class="nav-trigger" type="button" aria-haspopup="true" aria-expanded="false">
+            Deep learning 101
+            <svg class="chev" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 8 10 13 15 8"/></svg>
+          </button>
+          <ul class="nav-dropdown-menu" role="menu">
+            <li role="none"><a role="menuitem" href="./deep-learning.html">Deep learning overview <span class="sub">What it is and why it works for streetscapes</span></a></li>
+            <li role="none"><a role="menuitem" href="./yolo.html" aria-current="page">YOLO 101 <span class="sub">Object detection — stop signs &amp; lights</span></a></li>
+            <li role="none"><a role="menuitem" href="./unet.html">U-Net 101 <span class="sub">Segmentation — crosswalk paint</span></a></li>
+          </ul>
+        </li>
+        <li>
+          <a class="nav-cta" href="./app.html">
+            Open the app
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="10" x2="16" y2="10"/><polyline points="11 5 16 10 11 15"/></svg>
+          </a>
+        </li>
+      </ul>
+      <details class="nav-mobile">
+        <summary aria-label="Toggle menu">
+          <svg class="icon-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+          <svg class="icon-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+        </summary>
+        <div class="nav-mobile-panel">
+          <a href="./index.html">Overview</a>
+          <a href="./methodology.html">Data pipeline</a>
+          <details>
+            <summary>Deep learning 101</summary>
+            <div class="nav-mobile-sub">
+              <a href="./deep-learning.html">Deep learning overview</a>
+              <a href="./yolo.html">YOLO 101</a>
+              <a href="./unet.html">U-Net 101</a>
+            </div>
+          </details>
+          <a href="./app.html" class="nav-cta">Open the app</a>
+        </div>
+      </details>
+    </nav>
+  </div>
+
+  <main class="page-shell">
+    <!-- =================== HERO =================== -->
+    <section class="hero">
+      <div class="blob blob--clay blob--s4 blob--a"></div>
+      <div class="blob blob--moss blob--s1 blob--b"></div>
+      <div class="container">
+        <div class="hero-inner">
+          <p class="eyebrow">YOLO · Object detection</p>
+          <h1>YOLO: spotting things in a <em>single</em> look.</h1>
+          <p class="hero-text">
+            We use YOLO to find stop signs and traffic lights in Street View imagery. Here's what it is,
+            why it's fast, and the honest story of where it helps and where it stumbles.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== WHAT IT IS =================== -->
+    <section class="section section--tight">
+      <div class="container container--prose">
+        <div class="prose">
+          <p class="eyebrow">Plain-language definition</p>
+          <h2>What is YOLO?</h2>
+          <p>
+            <strong>YOLO is an object detector.</strong> Feed it an image and it returns a list:
+            <em>"stop sign, this box, 92% confident. Traffic light, that box, 64% confident."</em>
+          </p>
+          <p>
+            The name stands for <strong>"You Only Look Once."</strong> Older detectors scanned an image
+            multiple times — first proposing regions to consider, then deciding what was in each. YOLO does
+            both jobs in a single forward pass. That's why it's fast enough for real-time video, and why we
+            can run it across thousands of Street View frames without breaking the budget.
+          </p>
+
+          <div class="callout callout--moss">
+            <p>If U-Net is a careful colorist, YOLO is a quick spotter. It's not painting the object — it's
+            putting a box around it and naming it before moving on.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== DIAGRAM =================== -->
+    <section class="section">
+      <div class="container container--narrow">
+        <div class="section-heading section-heading--center">
+          <p class="eyebrow">Visual model</p>
+          <h2>What a YOLO output actually looks like.</h2>
+          <p>This is a stylized version of one frame after the model has run. Each box has a label and a confidence score.</p>
+        </div>
+
+        <div class="diagram">
+          <svg viewBox="0 0 800 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Stylized Street View frame showing YOLO detection boxes around a stop sign and traffic light">
+            <!-- Faux Street View frame: sky, road, sidewalk -->
+            <rect x="20" y="20" width="760" height="380" rx="24" ry="24" fill="#E6DCCD"/>
+            <!-- sky -->
+            <rect x="20" y="20" width="760" height="170" rx="24" ry="24" fill="#dde6dd"/>
+            <!-- road -->
+            <path d="M40,400 L380,200 L420,200 L760,400 Z" fill="#78786C" opacity="0.55"/>
+            <!-- road dashes -->
+            <g stroke="#FDFCF8" stroke-width="4" stroke-dasharray="14 18" stroke-linecap="round">
+              <line x1="400" y1="220" x2="400" y2="395"/>
+            </g>
+            <!-- sidewalk -->
+            <path d="M40,400 L380,200 L300,200 L20,395 Z" fill="#C18C5D" opacity="0.25"/>
+            <path d="M760,400 L420,200 L500,200 L780,395 Z" fill="#C18C5D" opacity="0.25"/>
+
+            <!-- Stop sign on right -->
+            <g transform="translate(560,210)">
+              <polygon points="0,-22 16,-16 22,0 16,16 0,22 -16,16 -22,0 -16,-16" fill="#A85448" stroke="#fff" stroke-width="3"/>
+              <text x="0" y="4" text-anchor="middle" font-family="Nunito, sans-serif" font-size="11" font-weight="800" fill="#fff">STOP</text>
+              <line x1="0" y1="22" x2="0" y2="120" stroke="#444" stroke-width="3"/>
+            </g>
+
+            <!-- Traffic light on left -->
+            <g transform="translate(220,150)">
+              <rect x="-14" y="-30" width="28" height="80" rx="6" fill="#2C2C24" stroke="#fff" stroke-width="2"/>
+              <circle cx="0" cy="-18" r="7" fill="#A85448"/>
+              <circle cx="0" cy="0" r="7" fill="#C18C5D" opacity="0.7"/>
+              <circle cx="0" cy="18" r="7" fill="#5D7052"/>
+              <line x1="0" y1="50" x2="0" y2="200" stroke="#444" stroke-width="3"/>
+            </g>
+
+            <!-- YOLO bounding boxes -->
+            <g fill="none" stroke-width="3">
+              <!-- Stop sign box -->
+              <rect x="528" y="180" width="64" height="68" rx="6" stroke="#5D7052"/>
+              <rect x="528" y="156" width="118" height="22" rx="4" fill="#5D7052" stroke="none"/>
+              <text x="538" y="172" font-family="Nunito, sans-serif" font-size="13" font-weight="800" fill="#F3F4F1">stop_sign · 0.92</text>
+
+              <!-- Traffic light box -->
+              <rect x="200" y="115" width="40" height="86" rx="6" stroke="#C18C5D"/>
+              <rect x="200" y="91" width="138" height="22" rx="4" fill="#C18C5D" stroke="none"/>
+              <text x="210" y="107" font-family="Nunito, sans-serif" font-size="13" font-weight="800" fill="#fff">traffic_light · 0.64</text>
+            </g>
+          </svg>
+          <p class="diagram-caption">Two detections, two confidences. The planner decides where to set the threshold for action.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== HOW WE USE IT =================== -->
+    <section class="section section--moss">
+      <div class="container container--prose">
+        <div class="prose">
+          <p class="eyebrow">In our pipeline</p>
+          <h2>How we use YOLO for traffic-control detection.</h2>
+          <ol>
+            <li><strong>Sample.</strong> For each detected intersection, we pull several Street View headings facing into the crossing. This gives every approach a fair chance.</li>
+            <li><strong>Detect.</strong> The fine-tuned YOLO model runs on each frame and returns boxes labeled <code>stop_sign</code> or <code>traffic_light</code> with a confidence score.</li>
+            <li><strong>Geolocate.</strong> Detections are projected from image coordinates back to the geographic location of the camera and the approach direction.</li>
+            <li><strong>Aggregate.</strong> Multiple detections of the same physical sign across nearby frames are merged into a single point feature.</li>
+            <li><strong>Export.</strong> The result is a GeoJSON layer of traffic-control points, each tagged with confidence and the Street View frame it came from.</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== RESULTS =================== -->
+    <section class="section">
+      <div class="container">
+        <div class="section-heading">
+          <p class="eyebrow">What it found</p>
+          <h2>Results across the pilot.</h2>
+        </div>
+
+        <div class="grid grid--3">
+          <article class="card card--asym">
+            <h3>Stop signs</h3>
+            <div class="width-summary mt-4">
+              <div class="width-pill"><strong>0.77</strong>F1 score</div>
+              <div class="width-pill"><strong>3,745</strong>Total traffic-control detections</div>
+            </div>
+            <p class="mt-6 text-muted">Stop signs are well-suited to YOLO: distinct shape, predictable color, usually unobstructed.</p>
+          </article>
+
+          <article class="card card--asym">
+            <h3>Traffic lights</h3>
+            <div class="width-summary mt-4">
+              <div class="width-pill"><strong>0.58</strong>F1 score</div>
+              <div class="width-pill"><strong>9,950</strong>Street View images processed</div>
+            </div>
+            <p class="mt-6 text-muted">Lights are harder. They sit far from the camera, get backlit, and disappear into tree canopy. Recall takes the hit.</p>
+          </article>
+
+          <article class="card card--asym">
+            <h3>Why these numbers are useful</h3>
+            <p class="text-muted">An F1 of 0.77 isn't perfect — but for screening, it's plenty. A planner reviewing a corridor can spot-check a handful of detections in the explorer and immediately see whether the model is consistent in their study area before relying on it.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== WHERE IT STUMBLES =================== -->
+    <section class="section section--sand">
+      <div class="container container--prose">
+        <div class="prose">
+          <p class="eyebrow">Honest limits</p>
+          <h2>Where YOLO stumbles.</h2>
+          <ul>
+            <li><strong>Backlit lights.</strong> When the sun is behind a traffic signal, the housing becomes a silhouette and the colored bulbs wash out. Recall drops sharply.</li>
+            <li><strong>Tree canopy.</strong> Foliage obstructing the signal head is the single biggest source of false negatives in our pilot.</li>
+            <li><strong>Distance and resolution.</strong> Lights mounted on far-side mast arms appear small. YOLO's bounding box gets noisy at low pixel counts.</li>
+            <li><strong>Look-alikes.</strong> Other red octagons (private property signs, shop displays) will be flagged occasionally. Confidence-thresholding cleans most of it up.</li>
+            <li><strong>Camera angle.</strong> Street View headings aren't always perfectly perpendicular to the cross-street. We sample multiple headings to compensate, but it's not free.</li>
+          </ul>
+
+          <div class="callout">
+            <p><strong>Practical takeaway:</strong> trust stop-sign detections more than traffic-light
+            detections, threshold by confidence when you need precision, and always use the explorer's Street
+            View link to verify before citing a single point in a memo.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== NEXT =================== -->
+    <section class="section section--tight">
+      <div class="container container--narrow">
+        <div class="section-heading section-heading--center">
+          <p class="eyebrow">Keep going</p>
+          <h2>Now meet the other half of the pipeline.</h2>
+        </div>
+        <div class="tile-links">
+          <a class="tile" href="./unet.html">
+            <p class="tile-eyebrow">Up next · Segmentation</p>
+            <h3>U-Net 101</h3>
+            <p>Where YOLO draws boxes, U-Net classifies every pixel. That's how we get crosswalk polygons from aerial imagery.</p>
+            <span class="tile-arrow">Read U-Net 101 →</span>
+          </a>
+          <a class="tile" href="./app.html">
+            <p class="tile-eyebrow">Try it</p>
+            <h3>See YOLO outputs in the explorer</h3>
+            <p>Pick a neighborhood, toggle the traffic-light and stop-sign layers, and click any detection to verify it in Street View.</p>
+            <span class="tile-arrow">Open the app →</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== FOOTER =================== -->
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-inner">
+          <div>
+            <p class="footer-brand">Streetscape AI</p>
+            <p>MUSA Practicum · University of Pennsylvania · Spring 2026</p>
+          </div>
+          <div class="footer-links">
+            <a href="./index.html">Overview</a>
+            <a href="./methodology.html">Methodology</a>
+            <a href="./deep-learning.html">DL 101</a>
+            <a href="./yolo.html">YOLO</a>
+            <a href="./unet.html">U-Net</a>
+            <a href="./app.html">App</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>
