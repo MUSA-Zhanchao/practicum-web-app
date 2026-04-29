@@ -108,7 +108,8 @@ const elements = {
   crossingSelect: document.getElementById("crossing-region-select"),
   crossingSummary: document.getElementById("crossing-summary"),
   crossingFeaturePanel: document.getElementById("crossing-feature-panel"),
-  toggleCrossings: document.getElementById("toggle-crossings")
+  toggleCrossings: document.getElementById("toggle-crossings"),
+  toggleCrossingIntersections: document.getElementById("toggle-crossing-intersections")
 };
 
 const CROSSING_REGIONS = ["South", "Middle", "Upper Middle", "University City"];
@@ -121,6 +122,8 @@ const CROSSING_COLORS = {
 
 let crossingMap = null;
 let crossingLayer = null;
+let crossingIntersectionLayer = null;
+let allIntersectionFeatures = null;
 
 const numberFormatter = new Intl.NumberFormat("en-US");
 const bundledData = window.STREETSCAPE_DATA;
@@ -221,6 +224,36 @@ function bindCrossingControls() {
     loadCrossings(elements.crossingSelect.value);
   });
   elements.toggleCrossings.addEventListener("change", syncCrossingVisibility);
+  if (elements.toggleCrossingIntersections) {
+    elements.toggleCrossingIntersections.addEventListener("change", syncCrossingVisibility);
+  }
+}
+
+function getAllIntersectionFeatures() {
+  if (allIntersectionFeatures) return allIntersectionFeatures;
+  const features = [];
+  if (bundledData?.neighborhoods) {
+    for (const key of Object.keys(bundledData.neighborhoods)) {
+      const nd = bundledData.neighborhoods[key];
+      if (nd?.intersections?.features) {
+        features.push(...nd.intersections.features);
+      }
+    }
+  }
+  allIntersectionFeatures = features;
+  return features;
+}
+
+function filterIntersectionsToBounds(bounds) {
+  const all = getAllIntersectionFeatures();
+  if (!bounds || !bounds.isValid()) return all;
+  const padded = bounds.pad(0.05);
+  return all.filter((feat) => {
+    const coords = feat?.geometry?.coordinates;
+    if (!coords) return false;
+    const [lon, lat] = coords;
+    return padded.contains([lat, lon]);
+  });
 }
 
 function loadCrossings(region) {
@@ -233,6 +266,9 @@ function loadCrossings(region) {
 
   if (crossingLayer && crossingMap.hasLayer(crossingLayer)) {
     crossingMap.removeLayer(crossingLayer);
+  }
+  if (crossingIntersectionLayer && crossingMap.hasLayer(crossingIntersectionLayer)) {
+    crossingMap.removeLayer(crossingIntersectionLayer);
   }
 
   crossingLayer = L.geoJSON({ type: "FeatureCollection", features: filtered }, {
@@ -255,33 +291,81 @@ function loadCrossings(region) {
     }
   });
 
+  const crossingsBounds = crossingLayer.getBounds();
+  const intersectionFeatures = region === "__ALL__"
+    ? getAllIntersectionFeatures()
+    : filterIntersectionsToBounds(crossingsBounds);
+
+  crossingIntersectionLayer = L.geoJSON(
+    { type: "FeatureCollection", features: intersectionFeatures },
+    {
+      pointToLayer: (_, latlng) => L.circleMarker(latlng, {
+        radius: region === "__ALL__" ? 3 : 5,
+        fillColor: "#0f1720",
+        fillOpacity: 0.85,
+        color: "#fffdf7",
+        weight: region === "__ALL__" ? 0.5 : 1.2
+      }),
+      onEachFeature: (feature, layer) => {
+        layer.on("click", () => {
+          const lat = Number(feature.properties.lat);
+          const lon = Number(feature.properties.lon);
+          renderIntersectionOnCrossingPanel({
+            numRoads: feature.properties.num_roads,
+            lat,
+            lon
+          });
+        });
+      }
+    }
+  );
+
   syncCrossingVisibility();
   fitToCrossingData();
-  renderCrossingSummary(region, filtered);
+  renderCrossingSummary(region, filtered, intersectionFeatures);
   resetCrossingFeaturePanel();
 }
 
 function syncCrossingVisibility() {
-  if (!crossingMap || !crossingLayer) return;
-  const visible = elements.toggleCrossings.checked;
-  if (visible) {
-    if (!crossingMap.hasLayer(crossingLayer)) {
-      crossingLayer.addTo(crossingMap);
+  if (!crossingMap) return;
+  if (crossingLayer) {
+    const visible = elements.toggleCrossings.checked;
+    if (visible) {
+      if (!crossingMap.hasLayer(crossingLayer)) crossingLayer.addTo(crossingMap);
+    } else if (crossingMap.hasLayer(crossingLayer)) {
+      crossingMap.removeLayer(crossingLayer);
     }
-  } else if (crossingMap.hasLayer(crossingLayer)) {
-    crossingMap.removeLayer(crossingLayer);
+  }
+  if (crossingIntersectionLayer) {
+    const visible = elements.toggleCrossingIntersections?.checked ?? false;
+    if (visible) {
+      if (!crossingMap.hasLayer(crossingIntersectionLayer)) crossingIntersectionLayer.addTo(crossingMap);
+    } else if (crossingMap.hasLayer(crossingIntersectionLayer)) {
+      crossingMap.removeLayer(crossingIntersectionLayer);
+    }
   }
 }
 
 function fitToCrossingData() {
-  if (!crossingMap || !crossingLayer) return;
-  const bounds = crossingLayer.getBounds?.();
-  if (bounds && bounds.isValid()) {
-    crossingMap.fitBounds(bounds.pad(0.1), { animate: true });
+  if (!crossingMap) return;
+  const candidates = [crossingLayer, crossingIntersectionLayer]
+    .filter(Boolean)
+    .map((layer) => layer.getBounds?.())
+    .filter((b) => b && b.isValid());
+
+  // Prefer the crossings polygon bounds if available (zoom to the chosen zone),
+  // otherwise fall back to the intersection bounds.
+  const polyBounds = crossingLayer?.getBounds?.();
+  const target = polyBounds && polyBounds.isValid()
+    ? polyBounds
+    : (candidates[0] || null);
+
+  if (target && target.isValid()) {
+    crossingMap.fitBounds(target.pad(0.1), { animate: true });
   }
 }
 
-function renderCrossingSummary(region, features) {
+function renderCrossingSummary(region, features, intersectionFeatures = []) {
   const areas = features
     .map((f) => Number(f.properties.area_sqft || 0))
     .filter((v) => Number.isFinite(v) && v > 0)
@@ -296,6 +380,7 @@ function renderCrossingSummary(region, features) {
       <h3>All mosaic regions</h3>
       <p>Combined view across the four U-Net mosaic regions.</p>
       <p><strong>${numberFormatter.format(features.length)}</strong> crosswalk polygons</p>
+      <p><strong>${numberFormatter.format(intersectionFeatures.length)}</strong> detected intersections</p>
       <p>Median painted area: <strong>${med.toFixed(1)} ft²</strong></p>
       <p>90th percentile area: <strong>${p90.toFixed(1)} ft²</strong></p>
       <p>Total painted area: <strong>${numberFormatter.format(Math.round(total))} ft²</strong></p>
@@ -307,9 +392,32 @@ function renderCrossingSummary(region, features) {
     <h3>${escapeHtml(region)}</h3>
     <p>U-Net crosswalk polygons inside the ${escapeHtml(region)} mosaic tile.</p>
     <p><strong>${numberFormatter.format(features.length)}</strong> crosswalk polygons</p>
+    <p><strong>${numberFormatter.format(intersectionFeatures.length)}</strong> detected intersections in view</p>
     <p>Median painted area: <strong>${med.toFixed(1)} ft²</strong></p>
     <p>90th percentile area: <strong>${p90.toFixed(1)} ft²</strong></p>
     <p>Total painted area: <strong>${numberFormatter.format(Math.round(total))} ft²</strong></p>
+  `;
+}
+
+function renderIntersectionOnCrossingPanel({ numRoads, lat, lon }) {
+  const rows = [
+    { label: "Connected roads", value: numRoads ?? "n/a" },
+    { label: "Latitude", value: Number(lat).toFixed(6) },
+    { label: "Longitude", value: Number(lon).toFixed(6) }
+  ];
+  const rowsMarkup = rows.map((row) => `
+    <div class="feature-meta-row">
+      <span class="feature-meta-label">${escapeHtml(String(row.label))}</span>
+      <span class="feature-meta-value">${escapeHtml(String(row.value))}</span>
+    </div>
+  `).join("");
+
+  elements.crossingFeaturePanel.innerHTML = `
+    <p class="feature-panel-tag">Selection</p>
+    <h3>Detected intersection</h3>
+    <p>Street View sampling was generated around this intersection candidate.</p>
+    <div class="feature-meta">${rowsMarkup}</div>
+    <a class="feature-link" href="${streetViewUrl(lat, lon)}" target="_blank" rel="noreferrer">Open in Google Street View</a>
   `;
 }
 
