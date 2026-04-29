@@ -1141,6 +1141,19 @@ input:focus-visible {
 .swatch-intersection { background: var(--primary); }
 .swatch-traffic     { background: var(--secondary); }
 .swatch-stop        { background: var(--destructive); }
+.swatch-cross-south  { background: #2a9d8f; }
+.swatch-cross-middle { background: #e9c46a; }
+.swatch-cross-upper  { background: #f4a261; }
+.swatch-cross-uc     { background: #6a4c93; }
+
+.legend-title {
+  margin: 0 0 0.4rem;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 800;
+  color: var(--secondary);
+}
 
 .map-panel {
   display: grid;
@@ -1152,7 +1165,9 @@ input:focus-visible {
   .map-panel { grid-template-columns: minmax(0, 1fr) 18rem; }
 }
 
-#map {
+#map,
+#map-crossings,
+.map-canvas {
   min-height: 32rem;
   border-radius: var(--r-xl);
   overflow: hidden;
@@ -1161,7 +1176,9 @@ input:focus-visible {
 }
 
 @media (min-width: 1024px) {
-  #map { min-height: 36rem; }
+  #map,
+  #map-crossings,
+  .map-canvas { min-height: 36rem; }
 }
 
 .feature-panel {

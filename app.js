@@ -104,8 +104,23 @@ const elements = {
   toggleSidewalks: document.getElementById("toggle-sidewalks"),
   toggleIntersections: document.getElementById("toggle-intersections"),
   toggleTraffic: document.getElementById("toggle-traffic"),
-  toggleStopSigns: document.getElementById("toggle-stop-signs")
+  toggleStopSigns: document.getElementById("toggle-stop-signs"),
+  crossingSelect: document.getElementById("crossing-region-select"),
+  crossingSummary: document.getElementById("crossing-summary"),
+  crossingFeaturePanel: document.getElementById("crossing-feature-panel"),
+  toggleCrossings: document.getElementById("toggle-crossings")
 };
+
+const CROSSING_REGIONS = ["South", "Middle", "Upper Middle", "University City"];
+const CROSSING_COLORS = {
+  "South": "#2a9d8f",
+  "Middle": "#e9c46a",
+  "Upper Middle": "#f4a261",
+  "University City": "#6a4c93"
+};
+
+let crossingMap = null;
+let crossingLayer = null;
 
 const numberFormatter = new Intl.NumberFormat("en-US");
 const bundledData = window.STREETSCAPE_DATA;
@@ -155,6 +170,178 @@ function init() {
   renderWidthSummary();
   renderTrainingHistory();
   loadNeighborhood(elements.select.value);
+
+  initCrossingsMap();
+}
+
+function initCrossingsMap() {
+  if (!elements.crossingSelect || !document.getElementById("map-crossings")) return;
+  if (!window.STREETSCAPE_CROSSINGS) {
+    elements.crossingSummary.innerHTML = `
+      <h3>Crossing data unavailable</h3>
+      <p>The bundled crosswalk polygons could not be loaded. Make sure <code>crossings-data.js</code> is present next to this page.</p>
+    `;
+    return;
+  }
+
+  crossingMap = window.L.map("map-crossings", {
+    zoomControl: false,
+    preferCanvas: true
+  }).setView([39.9526, -75.1652], 13);
+
+  window.L.control.zoom({ position: "bottomright" }).addTo(crossingMap);
+
+  window.L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; CARTO'
+  }).addTo(crossingMap);
+
+  populateCrossingRegionSelect();
+  bindCrossingControls();
+  loadCrossings(elements.crossingSelect.value);
+}
+
+function populateCrossingRegionSelect() {
+  const allOption = document.createElement("option");
+  allOption.value = "__ALL__";
+  allOption.textContent = "All regions";
+  elements.crossingSelect.appendChild(allOption);
+
+  CROSSING_REGIONS.forEach((name) => {
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+    elements.crossingSelect.appendChild(option);
+  });
+
+  elements.crossingSelect.value = "__ALL__";
+}
+
+function bindCrossingControls() {
+  elements.crossingSelect.addEventListener("change", () => {
+    loadCrossings(elements.crossingSelect.value);
+  });
+  elements.toggleCrossings.addEventListener("change", syncCrossingVisibility);
+}
+
+function loadCrossings(region) {
+  if (!crossingMap) return;
+
+  const all = window.STREETSCAPE_CROSSINGS.features || [];
+  const filtered = region === "__ALL__"
+    ? all
+    : all.filter((feat) => feat.properties.region === region);
+
+  if (crossingLayer && crossingMap.hasLayer(crossingLayer)) {
+    crossingMap.removeLayer(crossingLayer);
+  }
+
+  crossingLayer = L.geoJSON({ type: "FeatureCollection", features: filtered }, {
+    style: (feature) => ({
+      color: CROSSING_COLORS[feature.properties.region] || "#0f1720",
+      weight: 1,
+      fillColor: CROSSING_COLORS[feature.properties.region] || "#0f1720",
+      fillOpacity: 0.6
+    }),
+    onEachFeature: (feature, layer) => {
+      layer.on("click", () => {
+        const center = layer.getBounds().getCenter();
+        renderCrossingFeaturePanel({
+          region: feature.properties.region,
+          areaSqft: feature.properties.area_sqft,
+          lat: center.lat,
+          lon: center.lng
+        });
+      });
+    }
+  });
+
+  syncCrossingVisibility();
+  fitToCrossingData();
+  renderCrossingSummary(region, filtered);
+  resetCrossingFeaturePanel();
+}
+
+function syncCrossingVisibility() {
+  if (!crossingMap || !crossingLayer) return;
+  const visible = elements.toggleCrossings.checked;
+  if (visible) {
+    if (!crossingMap.hasLayer(crossingLayer)) {
+      crossingLayer.addTo(crossingMap);
+    }
+  } else if (crossingMap.hasLayer(crossingLayer)) {
+    crossingMap.removeLayer(crossingLayer);
+  }
+}
+
+function fitToCrossingData() {
+  if (!crossingMap || !crossingLayer) return;
+  const bounds = crossingLayer.getBounds?.();
+  if (bounds && bounds.isValid()) {
+    crossingMap.fitBounds(bounds.pad(0.1), { animate: true });
+  }
+}
+
+function renderCrossingSummary(region, features) {
+  const areas = features
+    .map((f) => Number(f.properties.area_sqft || 0))
+    .filter((v) => Number.isFinite(v) && v > 0)
+    .sort((a, b) => a - b);
+
+  const med = median(areas);
+  const p90 = percentile(areas, 0.9);
+  const total = areas.reduce((sum, v) => sum + v, 0);
+
+  if (region === "__ALL__") {
+    elements.crossingSummary.innerHTML = `
+      <h3>All mosaic regions</h3>
+      <p>Combined view across the four U-Net mosaic regions.</p>
+      <p><strong>${numberFormatter.format(features.length)}</strong> crosswalk polygons</p>
+      <p>Median painted area: <strong>${med.toFixed(1)} ft²</strong></p>
+      <p>90th percentile area: <strong>${p90.toFixed(1)} ft²</strong></p>
+      <p>Total painted area: <strong>${numberFormatter.format(Math.round(total))} ft²</strong></p>
+    `;
+    return;
+  }
+
+  elements.crossingSummary.innerHTML = `
+    <h3>${escapeHtml(region)}</h3>
+    <p>U-Net crosswalk polygons inside the ${escapeHtml(region)} mosaic tile.</p>
+    <p><strong>${numberFormatter.format(features.length)}</strong> crosswalk polygons</p>
+    <p>Median painted area: <strong>${med.toFixed(1)} ft²</strong></p>
+    <p>90th percentile area: <strong>${p90.toFixed(1)} ft²</strong></p>
+    <p>Total painted area: <strong>${numberFormatter.format(Math.round(total))} ft²</strong></p>
+  `;
+}
+
+function resetCrossingFeaturePanel() {
+  elements.crossingFeaturePanel.innerHTML = `
+    <p class="feature-panel-tag">Selection</p>
+    <h3>Crosswalk details</h3>
+    <p>Click a polygon to see its measured area and open the location in Google Street View.</p>
+  `;
+}
+
+function renderCrossingFeaturePanel({ region, areaSqft, lat, lon }) {
+  const rows = [
+    { label: "Mosaic region", value: region },
+    { label: "Painted area", value: `${Number(areaSqft).toFixed(1)} ft²` },
+    { label: "Latitude", value: lat.toFixed(6) },
+    { label: "Longitude", value: lon.toFixed(6) }
+  ];
+  const rowsMarkup = rows.map((row) => `
+    <div class="feature-meta-row">
+      <span class="feature-meta-label">${escapeHtml(String(row.label))}</span>
+      <span class="feature-meta-value">${escapeHtml(String(row.value))}</span>
+    </div>
+  `).join("");
+
+  elements.crossingFeaturePanel.innerHTML = `
+    <p class="feature-panel-tag">Selection</p>
+    <h3>Crosswalk polygon</h3>
+    <p>Painted region detected by the U-Net segmentation model. Verify on Street View before citing.</p>
+    <div class="feature-meta">${rowsMarkup}</div>
+    <a class="feature-link" href="${streetViewUrl(lat, lon)}" target="_blank" rel="noreferrer">Open in Google Street View</a>
+  `;
 }
 
 function populateNeighborhoodSelect() {

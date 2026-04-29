@@ -154,6 +154,7 @@
             </div>
 
             <div class="legend">
+              <p class="legend-title">YOLO detections</p>
               <div><span class="swatch swatch-sidewalk"></span>Sidewalk centerlines</div>
               <div><span class="swatch swatch-intersection"></span>Detected intersections</div>
               <div><span class="swatch swatch-traffic"></span>Traffic lights</div>
@@ -162,11 +163,61 @@
           </aside>
 
           <div class="map-panel">
-            <div id="map" data-lenis-prevent aria-label="Philadelphia results map"></div>
+            <div id="map" class="map-canvas" data-lenis-prevent aria-label="Philadelphia detections map"></div>
             <aside class="feature-panel" id="feature-panel">
               <p class="feature-panel-tag">Selection</p>
               <h3>Map feature details</h3>
               <p>Click a point on the map to inspect model outputs, location details, and Street View links.</p>
+            </aside>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== CROSSWALK EXPLORER =================== -->
+    <section class="section section--sand" style="padding-top: 1rem;">
+      <div class="container">
+        <div class="section-heading">
+          <p class="eyebrow">Crosswalk segmentation</p>
+          <h2>Crosswalk polygons from the U-Net mosaic.</h2>
+          <p>Each polygon is a connected paint region detected by the segmentation model. Filter by mosaic region, click a polygon to see its area and verify it in Street View.</p>
+        </div>
+
+        <div class="explorer-layout">
+          <aside class="control-panel" aria-label="Crosswalk map controls">
+            <div class="control-group">
+              <label for="crossing-region-select">Mosaic region</label>
+              <select id="crossing-region-select"></select>
+            </div>
+
+            <div class="control-group">
+              <span>Layers</span>
+              <label class="toggle">
+                <input type="checkbox" id="toggle-crossings" checked>
+                <span>Crosswalk polygons</span>
+              </label>
+            </div>
+
+            <div class="mini-summary" id="crossing-summary">
+              <h3>Region snapshot</h3>
+              <p>Select a region to see how many crosswalk polygons it contains and the median painted area.</p>
+            </div>
+
+            <div class="legend">
+              <p class="legend-title">U-Net crosswalks</p>
+              <div><span class="swatch swatch-cross-south"></span>South</div>
+              <div><span class="swatch swatch-cross-middle"></span>Middle</div>
+              <div><span class="swatch swatch-cross-upper"></span>Upper Middle</div>
+              <div><span class="swatch swatch-cross-uc"></span>University City</div>
+            </div>
+          </aside>
+
+          <div class="map-panel">
+            <div id="map-crossings" class="map-canvas" data-lenis-prevent aria-label="Philadelphia crosswalk segmentation map"></div>
+            <aside class="feature-panel" id="crossing-feature-panel">
+              <p class="feature-panel-tag">Selection</p>
+              <h3>Crosswalk details</h3>
+              <p>Click a polygon to see its measured area and open the location in Google Street View.</p>
             </aside>
           </div>
         </div>
@@ -248,6 +299,7 @@
     crossorigin=""
   ></script>
   <script src="./data-bundle.js"></script>
+  <script src="./crossings-data.js"></script>
   <script src="./app.js" type="module"></script>
   <script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js" defer></script>
   <script src="./interactions.js" defer></script>
